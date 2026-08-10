@@ -1,7 +1,8 @@
-// BOARD: T-Beam
+// BOARD: LilyGO T-Beam v1.2 (SX1278 + AXP2101)
 #include <Wire.h>
 #include <XPowersLib.h>
 #include <RadioLib.h>
+
 #define AXP_SDA 21
 #define AXP_SCL 22
 #define LORA_CS 18
@@ -17,7 +18,7 @@ void setup() {
   Serial.begin(115200);
   while (!Serial);
 
-  Serial.println("LilyGO T-Beam v1.2");
+  Serial.println("\nLilyGO T-Beam v1.2 - Transmitter");
 
   Wire.begin(AXP_SDA, AXP_SCL);
   if (!PMU.begin(Wire, AXP2101_SLAVE_ADDRESS, AXP_SDA, AXP_SCL)) {
@@ -29,8 +30,11 @@ void setup() {
   PMU.enableALDO3();
   Serial.println("Daya LoRa Aktif!");
 
-  Serial.print("Inisialisasi RadioLib 433 MHz\n");
-  int state = radio.begin(433.0, 250.0);
+  Serial.print("Inisialisasi RadioLib 433 MHz... ");
+  
+  // Freq: 433.0 MHz, BW: 125.0 kHz, SF: 9, CR: 7 (4/7), SyncWord: 0x12, Power: 10 dBm
+  // Parameter ini cocok dengan mode Air Data Rate 2.4 kbps pada modul EByte E220/E32
+  int state = radio.begin(433.0, 125.0, 9, 7, 0x12, 10);
 
   if (state == RADIOLIB_ERR_NONE) {
     Serial.println("BERHASIL!");
@@ -60,5 +64,5 @@ void loop() {
   }
 
   counter++;
-  delay(2000);
+  delay(1500);
 }
