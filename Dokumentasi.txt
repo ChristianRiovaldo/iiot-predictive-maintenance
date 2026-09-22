@@ -1,0 +1,71 @@
+==================== SETUP GATEWAY ====================
+
+===== 1. Setup Service ChirpStack =====
+
+cd ~/chirpstack-docker
+docker compose up -d
+
+// Untuk memastikan kontainer chirpstack dalam status berjalan
+docker compose ps
+
+// Untuk mematikan compose
+docker compose down
+
+// Untuk restart
+docker comspose restart
+
+===== 2. Ambil ID Gateway EUI Modul WM1302 =====
+
+cd ~/sx1302_hal
+./reset_lgw.sh
+./util_chip_id/chip_id -d /dev/spidev0.0
+
+EUI: 0x0016c001f122b7f0
+
+===== 3. Daftar gateway di Web Dashboard Chirpstack =====
+
+http://172.17.0.1:8080
+user: admin
+pass: admin
+Gateway > Add gateway
+
+GATEWAY:
+Nama = iiot-gateway
+EUI  = 0x0016c001f122b7f0
+
+APPLICATION
+Nama = IIOT GATEWAY
+
+===== 4. Edit Konfigurasi AS923 di ChirpStack =====
+gedit ~/chirpstack-docker/configuration/chirpstack-gateway-bridge/chirpstack-gateway-bridge.toml
+
+
+===== 4. Test Receiver Modul WM1302 =====
+
+cd ~/sx1302_hal
+./reset_lgw.sh
+./libloragw/test_loragw_hal_rx -a 923.2 -b 923.4 -r 1250 -d /dev/spidev0.0
+
+===== 5. Run Packet Forwarder Raspi =====
+
+// Edit parameter
+cd ~/sx1302_hal/packet_forwarder
+gedit global_conf.json.sx1250.AS923
+
+// Run packet forwarder
+cd ~/sx1302_hal
+./reset_lgw.sh
+cd ~/sx1302_hal/packet_forwarder
+sudo ./lora_pkt_fwd -c global_conf.json.sx1250.AS923
+
+// Lihat pesan teks
+docker exec -it chirpstack-docker-mosquitto-1 mosquitto_sub -t "as923/gateway/+/event/up" -v
+
+===== 6. Kirim ke EMQX Docker =====
+
+cd emqx-docker
+docker compose up -d
+
+Buka web browser http://localhost:18083 atau http://<IP RASPI>:18083
+user: admin
+pass: public
