@@ -24,7 +24,7 @@ EUI: 0x0016c001f122b7f0
 
 ===== 3. Daftar gateway di Web Dashboard Chirpstack =====
 
-http://172.17.0.1:8080
+http://<IP Raspi 5>:8080
 user: admin
 pass: admin
 Gateway > Add gateway
@@ -43,7 +43,10 @@ gedit ~/chirpstack-docker/configuration/chirpstack-gateway-bridge/chirpstack-gat
 ===== 4. Test Receiver Modul WM1302 =====
 
 cd ~/sx1302_hal
+
+// Untuk reset hardware wm1302
 ./reset_lgw.sh
+
 ./libloragw/test_loragw_hal_rx -a 923.2 -b 923.4 -r 1250 -d /dev/spidev0.0
 
 ===== 5. Run Packet Forwarder Raspi =====
@@ -53,8 +56,6 @@ cd ~/sx1302_hal/packet_forwarder
 gedit global_conf.json.sx1250.AS923
 
 // Run packet forwarder
-cd ~/sx1302_hal
-./reset_lgw.sh
 cd ~/sx1302_hal/packet_forwarder
 sudo ./lora_pkt_fwd -c global_conf.json.sx1250.AS923
 
@@ -66,6 +67,20 @@ docker exec -it chirpstack-docker-mosquitto-1 mosquitto_sub -t "as923/gateway/+/
 cd emqx-docker
 docker compose up -d
 
+cd ~/iiot_gateway
+python3 gateway_forwarder.py
+
 Buka web browser http://localhost:18083 atau http://<IP RASPI>:18083
 user: admin
 pass: public
+
+===== 7. Service gateway forwarder =====
+
+// Cek status service
+sudo systemctl status gateway_forwarder.service
+
+// Cek log data secara real-time
+sudo journalctl -u gateway_forwarder.service -f
+
+iiotgw@iiotgw:~ $ sudo systemctl stop gateway_forwarder.service
+iiotgw@iiotgw:~ $ sudo systemctl disable gateway_forwarder.service
